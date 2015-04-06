@@ -58,6 +58,14 @@ class Hue():
                 self.lightbulbs.append(light.name)
 
     def setBrightness(self, brightness):
+        if brightness == 0:
+            for light in self.lightbulbs:
+                self.bridge.set_light(light, 'on', False)
+        else:
+            for light in self.lightbulbs:
+                if not self.bridge.get_light(light, 'on'):
+                    self.bridge.set_light(light, 'on', True)
+
         self.bridge.set_light(self.lightbulbs, 'bri', brightness)
 
 def showHelp():
@@ -80,7 +88,7 @@ def initConfig():
         sys.exit(1)
 
 def onPosYChangeListener(posY):
-    minY = 80
+    minY = 90
     maxY = 400
     minBright = 0
     maxBright = 254

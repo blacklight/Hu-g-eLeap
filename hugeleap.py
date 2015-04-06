@@ -10,6 +10,8 @@ class LeapListener(Leap.Listener):
     def __init__(self, onYChange=None):
         super(self.__class__, self).__init__()
         self.onYChange = onYChange
+        self.collectedFrames = 0
+        self.framesBufferSize = 10
 
     def on_init(self, controller):
         print "Leap Motion initialized"
@@ -24,6 +26,12 @@ class LeapListener(Leap.Listener):
         print "Leap Motion exited"
 
     def on_frame(self, controller):
+        # React after X frames, to prevent flooding the Hue bridge
+        if self.collectedFrames < self.framesBufferSize:
+            self.collectedFrames += 1
+            return
+
+        self.collectedFrames = 0
         frame = controller.frame()
 
         for hand in frame.hands:
@@ -72,7 +80,7 @@ def initConfig():
         sys.exit(1)
 
 def onPosYChangeListener(posY):
-    minY = 60
+    minY = 80
     maxY = 400
     minBright = 0
     maxBright = 254

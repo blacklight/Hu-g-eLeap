@@ -7,11 +7,11 @@ from phue import Bridge
 config = {}
 
 class LeapListener(Leap.Listener):
-    def __init__(self, onYChange=None):
+    def __init__(self, onXYZChange=None):
         super(self.__class__, self).__init__()
-        self.onYChange = onYChange
+        self.onXYZChange = onXYZChange
         self.collectedFrames = 0
-        self.framesBufferSize = 5
+        self.framesBufferSize = 1
 
     def on_init(self, controller):
         print "Leap Motion initialized"
@@ -35,13 +35,17 @@ class LeapListener(Leap.Listener):
         frame = controller.frame()
 
         for hand in frame.hands:
+            posX = hand.palm_position[0]
             posY = hand.palm_position[1]
-            if self.onYChange:
-                self.onYChange(posY)
+            posZ = hand.palm_position[2]
+            print "[%s, %s, %s]" % (posX, posY, posZ)
+            if self.onXYZChange:
+                self.onXYZChange(posX, posY, posZ)
 
 class Hue():
     def __init__(self, bridge, lightbulb=None):
         self.bridgeAddress = bridge
+        self.lightsMap = {}
 
         if lightbulb:
             m = re.split('\s*,\s*', lightbulb)
@@ -52,13 +56,16 @@ class Hue():
         self.bridge.connect()
         self.bridge.get_api()
 
+        for light in self.bridge.lights:
+            self.lightsMap[light.name] = light
+
         if not hasattr(self, 'lightbulbs'):
             self.lightbulbs = []
             for light in self.bridge.lights:
                 self.lightbulbs.append(light.name)
 
-    def setBrightness(self, brightness):
-        if brightness == 0:
+    def setBri(self, bri):
+        if bri == 0:
             for light in self.lightbulbs:
                 self.bridge.set_light(light, 'on', False)
         else:
@@ -66,7 +73,13 @@ class Hue():
                 if not self.bridge.get_light(light, 'on'):
                     self.bridge.set_light(light, 'on', True)
 
-        self.bridge.set_light(self.lightbulbs, 'bri', brightness)
+        self.bridge.set_light(self.lightbulbs, 'bri', bri)
+
+    def setSat(self, sat):
+        self.bridge.set_light(self.lightbulbs, 'sat', sat)
+
+    def setHue(self, hue):
+        self.bridge.set_light(self.lightbulbs, 'hue', hue)
 
 def showHelp():
     print "Usage: %s <-b|--bridge> bridge [-l|--lightbulb lighbulb]\n" \
@@ -87,19 +100,41 @@ def initConfig():
         showHelp()
         sys.exit(1)
 
-def onPosYChangeListener(posY):
+def onPosXYZChangeListener(posX, posY, posZ):
+    minX = -100
+    maxX = 100
     minY = 90
     maxY = 400
-    minBright = 0
-    maxBright = 254
+    minZ = -20
+    maxZ = 200
 
+    minBri = 0
+    maxBri = 254
+    minSat = 154
+    maxSat = 500
+    minHue = 0
+    maxHue = 65535
+
+    if posX > maxX:
+        posX = maxX
+    elif posX < minX:
+        posX = minX
     if posY > maxY:
         posY = maxY
     elif posY < minY:
         posY = minY
+    if posZ > maxZ:
+        posZ = maxZ
+    elif posZ < minZ:
+        posZ = minZ
 
-    brightness = int((((posY-minY) / (maxY-minY)) * (maxBright-minBright)) + minBright)
-    config['hue'].setBrightness(brightness)
+    sat = int((((posX-minX) / (maxX-minX)) * (maxSat-minSat)) + minSat)
+    bri = int((((posY-minY) / (maxY-minY)) * (maxBri-minBri)) + minBri)
+    hue = int((((posZ-minZ) / (maxZ-minZ)) * (maxHue-minHue)) + minHue)
+
+    config['hue'].setBri(bri)
+    config['hue'].setSat(sat)
+    config['hue'].setHue(hue)
 
 def main():
     initConfig()
@@ -109,7 +144,7 @@ def main():
     config['hue'].connect()
 
     print "Initializing Leap Motion connection"
-    listener = LeapListener(onYChange = onPosYChangeListener)
+    listener = LeapListener(onXYZChange = onPosXYZChangeListener)
     controller = Leap.Controller()
     controller.add_listener(listener)
 

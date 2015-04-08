@@ -82,19 +82,28 @@ class Hue():
         self.bridge.set_light(self.lightbulbs, 'hue', hue)
 
 def showHelp():
-    print "Usage: %s <-b|--bridge> bridge [-l|--lightbulb lighbulb]\n" \
+    print "Usage: %s <-b|--bridge> bridge [-l|--lightbulb lighbulb] [--no-sat] [--no-bri] [--no-hue]\n" \
         "  -b|--bridge\tIP address or hostname of the Philips Hue bridge\n" \
         "  -l|--lightbulb\tLightbulbs to control, name or index, or comma separated list (default: all)\n" \
+        "  --no-sat\tDon't set the light saturation (Leap X axis) (default: not set)\n" \
+        "  --no-bri\tDon't set the light brightness (Leap Y axis) (default: not set)\n" \
+        "  --no-bri\tDon't set the light hue (Leap Z axis) (default: not set)\n" \
         % (sys.argv[0])
 
 def initConfig():
-    optlist, args = getopt(sys.argv[1:], 'b:l:', ['bridge=', 'lightbulb='])
+    optlist, args = getopt(sys.argv[1:], 'b:l:', ['bridge=', 'lightbulb=', 'no-bri', 'no-sat', 'no-hue'])
 
     for opt in optlist:
         if opt[0] == '-b' or opt[0] == '--bridge':
             config['bridge'] = opt[1]
         elif opt[0] == '-l' or opt[0] == '--lightbulb':
             config['lightbulb'] = opt[1]
+        elif opt[0] == '--no-hue':
+            config['nohue'] = True
+        elif opt[0] == '--no-sat':
+            config['nosat'] = True
+        elif opt[0] == '--no-bri':
+            config['nobri'] = True
 
     if 'bridge' not in config:
         showHelp()
@@ -132,9 +141,14 @@ def onPosXYZChangeListener(posX, posY, posZ):
     bri = int((((posY-minY) / (maxY-minY)) * (maxBri-minBri)) + minBri)
     hue = int((((posZ-minZ) / (maxZ-minZ)) * (maxHue-minHue)) + minHue)
 
-    config['hue'].setBri(bri)
-    config['hue'].setSat(sat)
-    config['hue'].setHue(hue)
+    if not 'nosat' in config:
+        config['hue'].setSat(sat)
+
+    if not 'nobri' in config:
+        config['hue'].setBri(bri)
+
+    if not 'nohue' in config:
+        config['hue'].setHue(hue) # WTF? Setting the "hue" on a "Hue" lightbulb? Name clash?
 
 def main():
     initConfig()

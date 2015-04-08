@@ -11,7 +11,7 @@ class LeapListener(Leap.Listener):
         super(self.__class__, self).__init__()
         self.onXYZChange = onXYZChange
         self.collectedFrames = 0
-        self.framesBufferSize = 1
+        self.framesBufferSize = 3
 
     def on_init(self, controller):
         print "Leap Motion initialized"

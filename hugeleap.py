@@ -1,10 +1,12 @@
 #!/usr/bin/python2
 
 import Leap, sys, re
+from math import sqrt
 from getopt import getopt
 from phue import Bridge
 
 config = {}
+prevFrame = None
 
 class LeapListener(Leap.Listener):
     def __init__(self, onXYZChange=None):
@@ -110,12 +112,15 @@ def initConfig():
         sys.exit(1)
 
 def onPosXYZChangeListener(posX, posY, posZ):
+    global prevFrame
+
     minX = -100
     maxX = 100
     minY = 90
     maxY = 400
     minZ = -20
     maxZ = 200
+    maxFrameDist = 30
 
     minBri = 0
     maxBri = 254
@@ -123,6 +128,20 @@ def onPosXYZChangeListener(posX, posY, posZ):
     maxSat = 500
     minHue = 0
     maxHue = 65535
+
+    if prevFrame is not None:
+        dist = sqrt( \
+            (posX-prevFrame[0])*(posX-prevFrame[0]) + \
+            (posY-prevFrame[1])*(posY-prevFrame[1]) + \
+            (posZ-prevFrame[2])*(posZ-prevFrame[2]) \
+        );
+
+        prevFrame = [posX, posY, posZ]
+        if dist > maxFrameDist:
+            return
+    else:
+        prevFrame = [posX, posY, posZ]
+
 
     if posX > maxX:
         posX = maxX

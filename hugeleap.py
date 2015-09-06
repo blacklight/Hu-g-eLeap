@@ -120,7 +120,7 @@ def onPosXYZChangeListener(posX, posY, posZ):
     maxY = 400
     minZ = -20
     maxZ = 200
-    maxFrameDist = 30
+    maxFrameDist = 20
 
     minBri = 0
     maxBri = 254

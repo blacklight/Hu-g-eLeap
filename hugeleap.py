@@ -123,11 +123,11 @@ def onPosXYZChangeListener(posX, posY, posZ):
     maxFrameDist = 20
 
     minBri = 0
-    maxBri = 254
-    minSat = 154
-    maxSat = 500
+    maxBri = 255
+    minSat = 0
+    maxSat = 255
     minHue = 0
-    maxHue = 65535
+    maxHue = 255
 
     if prevFrame is not None:
         dist = sqrt( \
